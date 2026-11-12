@@ -1,11 +1,19 @@
 from dataclasses import dataclass, field, FrozenInstanceError
 from abc import ABC, abstractmethod
+from excecoes.erros import *
 
 
 @dataclass
 class Paciente:
     nome: str
     cartao_sus: str
+
+    def __eq__(self, outro: object) -> bool:
+        if not isinstance(outro, Paciente):
+            return NotImplemented
+        
+        return (self.nome == outro.nome
+        and self.cartao_sus == outro.cartao_sus)
 
 
 class Atendimento(ABC, Paciente):
@@ -53,7 +61,13 @@ class Agenda():
     def agendar(self, atendimento:Atendimento) -> None:
         if not isinstance(atendimento, Atendimento):
             raise TypeError("Atendimento informado é inválido")
-        pass
+
+        for i in self.__atendimentos:
+            if i._cartao_sus == atendimento._cartao_sus:
+                raise PacienteJaAgendadoError("o paciente já tematendimento na agenda")
+
+        if (atendimento.)
+            
         # pacientejaagendado se já tiver na lista
         # horarioindisponivel se nao couber no minutos
 
