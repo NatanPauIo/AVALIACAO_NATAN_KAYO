@@ -16,11 +16,12 @@ class Paciente:
         and self.cartao_sus == outro.cartao_sus)
 
 
-class Atendimento(ABC, Paciente):
-    def __init__(self, nome: str, cartao_sus: str, tipo_atendimento: str) -> None:
+class Atendimento(ABC,):
+    def __init__(self, nome: str, cartao_sus: str, tipo_atendimento: str,paciente:Paciente) -> None:
         self._nome = nome
         self._cartao_sus = cartao_sus
         self._tipo_atendimento = tipo_atendimento
+        self.paciente = paciente
    
     @abstractmethod
     def duracao_minutos(self) -> int: 
@@ -75,10 +76,14 @@ class Agenda():
             raise TypeError("Atendimento informado é inválido")
 
         for i in self.__atendimentos:
-            if i._cartao_sus == atendimento._cartao_sus:
-                raise PacienteJaAgendadoError("o paciente já tematendimento na agenda")
+            if i.paciente == atendimento.paciente:
+                raise PacienteJaAgendadoError("o paciente já tem atendimento na agenda")
 
-        if (atendimento.)
+        if (atendimento.duracao_minutos > self.limites_minutos):
+            raise HorarioIndisponivelError("O tempo de atendimento ultrapassa o tempo disponivel.")
+
+        self.__atendimentos.append(atendimento)
+        print("Atendimento adicionado com sucesso")
             
         # pacientejaagendado se já tiver na lista
         # horarioindisponivel se nao couber no minutos
