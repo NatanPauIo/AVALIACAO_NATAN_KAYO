@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from excecoes.erros import *
+from excecoes.erros import HorarioIndisponivelError, PacienteJaAgendadoError
 
 
 @dataclass(frozen=True)
@@ -11,19 +11,17 @@ class Paciente:
 
 class Atendimento(ABC):
     def __init__(self, paciente: Paciente) -> None:
-       
         self._paciente = paciente
 
     @property
     def paciente(self) -> Paciente:
         return self._paciente
-   
+
     @abstractmethod
-    def duracao_minutos(self) -> int: 
+    def duracao_minutos(self) -> int:
         pass
 
     def __str__(self) -> str:
-        
         return f"{type(self).__name__} - Paciente: {self._paciente.nome} ({self.duracao_minutos()} min)"
 
 
@@ -32,9 +30,11 @@ class Consulta(Atendimento):
         super().__init__(paciente=paciente)
         self.especialidade = especialidade
         self.retorno = retorno
-    
-    def duracao_minutos(self) -> int: 
-        return 15 if self.retorno else 30
+
+    def duracao_minutos(self) -> int:
+        if self.retorno:
+            return 15  
+        return 30
 
 
 class Exame(Atendimento):
@@ -43,7 +43,7 @@ class Exame(Atendimento):
         self.tipo = tipo
         self.jejum = jejum
 
-    def duracao_minutos(self) -> int: 
+    def duracao_minutos(self) -> int:
         return 30 if self.jejum else 20
 
 
@@ -53,32 +53,37 @@ class Vacinacao(Atendimento):
         self.vacina = vacina
         self.doses = doses
 
-    def duracao_minutos(self) -> int: 
+    def duracao_minutos(self) -> int:
         return 10 * self.doses
 
 
 class Agenda:
-    def __init__(self) -> None:
-        self.minutos_ocupados = 240
+    def __init__(self, limite_minutos: int = 240) -> None:
+        self._limite_minutos = limite_minutos
         self._atendimentos: list[Atendimento] = []
-        self.minutos_ocupados = 0
+        self._minutos_ocupados = 0
 
     @property
-    def atendimentos(self) -> list[Atendimento]:
-        return self._atendimentos
+    def atendimentos(self) -> tuple[Atendimento, ...]:
+        return tuple(self._atendimentos)
+
+    @property
+    def minutos_ocupados(self) -> int:
+        return self._minutos_ocupados
 
     def agendar(self, atendimento: Atendimento) -> None:
-        if not isinstance(atendimento, Atendimento):
-            raise TypeError("Atendimento informado é inválido")
-
         for item in self._atendimentos:
             if item.paciente == atendimento.paciente:
-                raise PacienteJaAgendadoError("O paciente já tem atendimento na agenda")
+                raise PacienteJaAgendadoError(
+                    f"O paciente {atendimento.paciente.nome} já tem atendimento na agenda."
+                )
 
-        tempo_ocupado = sum(item.duracao_minutos() for item in self._atendimentos)
-        if tempo_ocupado + atendimento.duracao_minutos() > self.minutos_ocupados:
-            raise HorarioIndisponivelError("O tempo de atendimento ultrapassa o tempo disponível.")
+        minutos_restantes = self._limite_minutos - self._minutos_ocupados
+        if atendimento.duracao_minutos() > minutos_restantes:
+            raise HorarioIndisponivelError(
+                f"O tempo de atendimento ({atendimento.duracao_minutos()} min) "
+                f"ultrapassa o tempo disponível ({minutos_restantes} min)."
+            )
 
-        
-        self.__atendimentos.append(atendimento)
-        self.minutos_ocupados += atendimento.duracao_minutos()
+        self._atendimentos.append(atendimento)
+        self._minutos_ocupados += atendimento.duracao_minutos()
