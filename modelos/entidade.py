@@ -1,92 +1,84 @@
-from dataclasses import dataclass, field, FrozenInstanceError
+from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from excecoes.erros import *
 
 
-@dataclass
+@dataclass(frozen=True)
 class Paciente:
     nome: str
     cartao_sus: str
 
-    def __eq__(self, outro: object) -> bool:
-        if not isinstance(outro, Paciente):
-            return NotImplemented
-        
-        return (self.nome == outro.nome
-        and self.cartao_sus == outro.cartao_sus)
 
+class Atendimento(ABC):
+    def __init__(self, paciente: Paciente) -> None:
+       
+        self._paciente = paciente
 
-class Atendimento(ABC,):
-    def __init__(self, nome: str, cartao_sus: str, tipo_atendimento: str,paciente:Paciente) -> None:
-        self._nome = nome
-        self._cartao_sus = cartao_sus
-        self._tipo_atendimento = tipo_atendimento
-        self.paciente = paciente
+    @property
+    def paciente(self) -> Paciente:
+        return self._paciente
    
     @abstractmethod
     def duracao_minutos(self) -> int: 
         pass
 
     def __str__(self) -> str:
-        return f"Tipo do atendimento: {self._tipo_atendimento}, Nome do paciente: {self._nome}, Duração: {self.duracao_minutos()} minutos"
+        
+        return f"{type(self).__name__} - Paciente: {self._paciente.nome} ({self.duracao_minutos()} min)"
 
 
 class Consulta(Atendimento):
-    def __init__(self, especialidade: str, retorno: bool = False) -> None:
-        super().__init__(nome="", cartao_sus="", tipo_atendimento="Consulta")
-        self._especialidade = especialidade
-        self._retorno = retorno
+    def __init__(self, paciente: Paciente, especialidade: str, retorno: bool = False) -> None:
+        super().__init__(paciente=paciente)
+        self.especialidade = especialidade
+        self.retorno = retorno
     
     def duracao_minutos(self) -> int: 
-        if self._retorno:
-            return 15
-        return 30
+        return 15 if self.retorno else 30
+
 
 class Exame(Atendimento):
-    def __init__(self, tipo: str, jejum: bool = False) -> None:
-        super().__init__(nome="", cartao_sus="", tipo_atendimento="Exame")
-        self._tipo = tipo
-        self._jejum = jejum
-        self._duracao_minutos = 20
+    def __init__(self, paciente: Paciente, tipo: str, jejum: bool = False) -> None:
+        super().__init__(paciente=paciente)
+        self.tipo = tipo
+        self.jejum = jejum
 
     def duracao_minutos(self) -> int: 
-        if self._jejum:
-            return 30
-        return 20
+        return 30 if self.jejum else 20
+
 
 class Vacinacao(Atendimento):
-    def __init__(self, vacina: str, doses: int = 1) -> None:
-        super().__init__(nome="", cartao_sus="", tipo_atendimento="Vacinação")
-        self._vacina = vacina
-        self._doses = doses
-        self._duracao_minutos = 10
+    def __init__(self, paciente: Paciente, vacina: str, doses: int = 1) -> None:
+        super().__init__(paciente=paciente)
+        self.vacina = vacina
+        self.doses = doses
 
     def duracao_minutos(self) -> int: 
-        return 10 * self._doses
+        return 10 * self.doses
 
 
-class Agenda():
+class Agenda:
     def __init__(self) -> None:
-        self.limites_minutos = 240
-        self.__atendimentos : list[Atendimento] = []
+        self.minutos_ocupados = 240
+        self._atendimentos: list[Atendimento] = []
+        self.minutos_ocupados = 0
 
+    @property
+    def atendimentos(self) -> list[Atendimento]:
+        return self._atendimentos
 
-    def agendar(self, atendimento:Atendimento) -> None:
+    def agendar(self, atendimento: Atendimento) -> None:
         if not isinstance(atendimento, Atendimento):
             raise TypeError("Atendimento informado é inválido")
 
-        for i in self.__atendimentos:
-            if i.paciente == atendimento.paciente:
-                raise PacienteJaAgendadoError("o paciente já tem atendimento na agenda")
+        for item in self._atendimentos:
+            if item.paciente == atendimento.paciente:
+                raise PacienteJaAgendadoError("O paciente já tem atendimento na agenda")
 
-        if (atendimento.duracao_minutos > self.limites_minutos):
-            raise HorarioIndisponivelError("O tempo de atendimento ultrapassa o tempo disponivel.")
+        tempo_ocupado = sum(item.duracao_minutos() for item in self._atendimentos)
+        if tempo_ocupado + atendimento.duracao_minutos() > self.minutos_ocupados:
+            raise HorarioIndisponivelError("O tempo de atendimento ultrapassa o tempo disponível.")
 
+        
         self.__atendimentos.append(atendimento)
-        print("Atendimento adicionado com sucesso")
-            
-        # pacientejaagendado se já tiver na lista
-        # horarioindisponivel se nao couber no minutos
-
-
-   
+        self.minutos_ocupados += atendimento.duracao_minutos()

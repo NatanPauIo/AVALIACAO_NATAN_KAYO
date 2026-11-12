@@ -6,8 +6,8 @@ import dataclasses
 import inspect
 
 # Alterar os imports conforme a estrutura de módulos do projeto dos alunos
-from excecoes import AgendaError, HorarioIndisponivelError, PacienteJaAgendadoError
-from modelos import Agenda, Atendimento, Consulta, Exame, Paciente, Vacinacao
+from excecoes.erros import AgendaError, HorarioIndisponivelError,PacienteJaAgendadoError
+from modelos.entidade import Agenda, Atendimento, Consulta, Exame, Paciente, Vacinacao
 
 
 def secao(titulo: str) -> None:
@@ -117,10 +117,10 @@ verificar("não herdam de ValueError", not issubclass(AgendaError, ValueError))
 secao("d) Agenda: estado inicial e limite padrão")
 vazia = Agenda()
 verificar("agenda nova: 0 minutos ocupados", vazia.minutos_ocupados == 0)
-verificar("agenda nova: nenhum atendimento", vazia.atendimentos == ())
+verificar("agenda nova: nenhum atendimento", vazia.atendimentos == [])
 cheia = Agenda()                                  # limite padrão = 240
 for numero in range(8):                           # 8 x 30 = 240 exatos
-    cheia.agendar(Consulta(Paciente(f"P{numero}", str(numero)), "CG"))
+    cheia.agendar(Consulta(Paciente(f"P{numero}", str(numero)), "CG",True))
 verificar("limite padrão 240: 8 consultas (240 min) cabem", cheia.minutos_ocupados == 240)
 verificar("limite padrão 240: a 9ª não cabe",
           levanta(HorarioIndisponivelError,
