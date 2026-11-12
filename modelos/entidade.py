@@ -15,3 +15,20 @@ class Atendimento(ABC, Paciente):
 
 @abstractmethod
 def duracao_minutos(self) -> int: ...
+
+
+class Agenda():
+    def __init__(self) -> None:
+        self.limites_minutos = 240
+        self.__atendimentos : list[Atendimento] = []
+
+
+    def agendar(self, atendimento:Atendimento) -> None:
+        if not isinstance(atendimento, Atendimento):
+            raise TypeError("Atendimento informado é inválido")
+        pass
+        # pacientejaagendado se já tiver na lista
+        # horarioindisponivel se nao couber no minutos
+
+
+   
